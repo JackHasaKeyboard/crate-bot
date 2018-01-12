@@ -49,5 +49,11 @@ prompt.get('no', function(err, i) {
 				console.log(err);
 			}
 		});
+
+		community.uploadAvatar('crate.png', null, function(err, result) {
+			if (err) {
+				console.log(err);
+			}
+		});
 	});
 });
