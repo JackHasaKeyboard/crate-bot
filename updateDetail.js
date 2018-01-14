@@ -46,7 +46,8 @@ prompt.get('no', function(err, i) {
 					'state': '',
 					'city': '',
 					'background': '',
-					'featuredBadge': ''
+					'featuredBadge': '',
+					'primaryGroup': '103582791435442783' // Project Crate
 				}, function(err) {
 					if (err) {
 						console.log(err);
