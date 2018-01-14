@@ -4,14 +4,12 @@ const prompt = require('prompt');
 const cred = require('./cred.js');
 
 
-prompt.start();
-
-prompt.get('no', function(err, i) {
+exports.updateDetail = function(no, callback) {
 	const community = new SteamCommunity;
 
 	community.login({
-		'accountName': 'projectcrate' + i.no,
-		'password': cred.crate.password + i.no
+		'accountName': 'projectcrate' + no,
+		'password': cred.crate.password + no
 	}, function(err, user) {
 		if (err) {
 			console.log(err);
@@ -26,9 +24,9 @@ prompt.get('no', function(err, i) {
 		community.loggedIn(function(err, loggedIn) {
 			if (loggedIn) {
 				community.editProfile({
-					'name': 'Project Crate (' + i.no + ')',
+					'name': 'Project Crate (' + no + ')',
 					'summary': `
-					Storage account #` + i.no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
+					Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
 
 					We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
 
@@ -38,7 +36,7 @@ prompt.get('no', function(err, i) {
 					The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
 					And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
 					`,
-					'customURL': 'projectcrate' + i.no,
+					'customURL': 'projectcrate' + no,
 
 					// null settings
 					'realName': '',
@@ -66,12 +64,14 @@ prompt.get('no', function(err, i) {
 		const User = new SteamUser;
 
 		User.logOn({
-			'accountName': 'projectcrate' + i.no,
-			'password': cred.crate.password + i.no
+			'accountName': 'projectcrate' + no,
+			'password': cred.crate.password + no
 		});
 
 		User.on('loggedOn', function(details) {
 			User.requestValidationEmail();
+
+			callback();
 		});
 	});
-});
+}
