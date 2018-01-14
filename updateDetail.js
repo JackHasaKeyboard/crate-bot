@@ -1,4 +1,5 @@
 const SteamCommunity = require('steamcommunity');
+const SteamUser = require('steam-user');
 const prompt = require('prompt');
 const cred = require('./cred.js');
 
@@ -22,38 +23,54 @@ prompt.get('no', function(err, i) {
 			}
 		});
 
-		community.editProfile({
-			'name': 'Project Crate (' + i.no + ')',
-			'summary': `
-			Storage account #` + i.no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
-			
-			We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
-			
-			Dude in charge: http://steamcommunity.com/id/JackThaGamer/
-			Steam Group: http://steamcommunity.com/groups/ProjectCrate
-			
-			The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
-			And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
-			`,
-			'customURL': 'projectcrate' + i.no,
+		community.loggedIn(function(err, loggedIn) {
+			if (loggedIn) {
+				community.editProfile({
+					'name': 'Project Crate (' + i.no + ')',
+					'summary': `
+					Storage account #` + i.no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
 
-			// null settings
-			'realName': '',
-			'country': '',
-			'state': '',
-			'city': '',
-			'background': '',
-			'featuredBadge': ''
-		}, function(err) {
-			if (err) {
-				console.log(err);
+					We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
+
+					Dude in charge: http://steamcommunity.com/id/JackThaGamer/
+					Steam Group: http://steamcommunity.com/groups/ProjectCrate
+
+					The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
+					And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
+					`,
+					'customURL': 'projectcrate' + i.no,
+
+					// null settings
+					'realName': '',
+					'country': '',
+					'state': '',
+					'city': '',
+					'background': '',
+					'featuredBadge': ''
+				}, function(err) {
+					if (err) {
+						console.log(err);
+					}
+				});
+
+				community.uploadAvatar('crate.png', null, function(err, result) {
+					if (err) {
+						console.log(err);
+					}
+				});
 			}
 		});
 
-		community.uploadAvatar('crate.png', null, function(err, result) {
-			if (err) {
-				console.log(err);
-			}
+
+		const User = new SteamUser;
+
+		User.logOn({
+			'accountName': 'projectcrate' + i.no,
+			'password': cred.crate.password + i.no
+		});
+
+		User.on('loggedOn', function(details) {
+			User.requestValidationEmail();
 		});
 	});
 });
