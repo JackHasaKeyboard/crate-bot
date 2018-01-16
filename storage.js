@@ -1,11 +1,11 @@
-const SteamCommunity = require('steamcommunity');
-const SteamUser = require('steam-user');
-const prompt = require('prompt');
-const cred = require('./cred.js');
+var SteamUser = require('steam-user');
+var SteamCommunity = require('steamcommunity');
+var general = require('./general.js');
+var cred = require('./cred.js');
 
 
-exports.updateDetail = function(no, callback) {
-	const community = new SteamCommunity;
+updateDetail = function(no, callback) {
+	var community = new SteamCommunity;
 
 	community.login({
 		'accountName': 'projectcrate' + no,
@@ -59,19 +59,20 @@ exports.updateDetail = function(no, callback) {
 				});
 			}
 		});
+	});
+}
 
 
-		const User = new SteamUser;
-
-		User.logOn({
-			'accountName': 'projectcrate' + no,
-			'password': cred.crate.password + no
-		});
-
-		User.on('loggedOn', function(details) {
-			User.requestValidationEmail();
-
-			callback();
+mkAcct = function(no) {
+	general.initAcct(no, function() {
+		updateDetail(no, function() {
+			console.log('Successfully created projectcrate' + no);
 		});
 	});
+}
+
+
+module.exports = {
+	updateDetail,
+	mkAcct
 }
