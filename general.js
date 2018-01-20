@@ -1,5 +1,6 @@
 const SteamUser = require('steam-user');
 const fetch = require('node-fetch');
+const prompt = require('prompt');
 const cred = require('./cred.js');
 
 initAcct = function(no, callback) {
@@ -34,12 +35,36 @@ chkStatus = function(no, callback) {
 		} else {
 			return false;
 		}
+	});
+}
 
-		callback();
+updatePassword = function(no, current) {
+	const User = new SteamUser();
+
+	User.logOn({
+		'accountName': 'projectcrate' + no,
+		'password': current
+	});
+
+	User.on('loggedOn', function() {
+		console.log('Successfully logged in');
+
+		User.requestPasswordChangeEmail(current, function() {
+			prompt.get(['code'], function(err, i) {
+				User.changePassword(current, cred.crate.password + no, i.code, function(err) {
+					if (err) {
+						console.log(err);
+					} else {
+						console.log('Successfully updated password');
+					}
+				});
+			});
+		});
 	});
 }
 
 module.exports = {
 	initAcct,
-	chkStatus
+	chkStatus,
+	updatePassword
 }
