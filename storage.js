@@ -1,7 +1,8 @@
-var SteamUser = require('steam-user');
-var SteamCommunity = require('steamcommunity');
-var general = require('./general.js');
-var cred = require('./cred.js');
+const SteamUser = require('steam-user');
+const SteamCommunity = require('steamcommunity');
+const prompt = require('prompt');
+const general = require('./general.js');
+const cred = require('./cred.js');
 
 
 updateDetail = function(no, callback) {
@@ -61,7 +62,6 @@ updateDetail = function(no, callback) {
 		});
 	});
 }
-
 
 mkAcct = function(no) {
 	general.initAcct(no, function() {
