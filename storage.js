@@ -16,12 +16,6 @@ updateDetail = function(no, callback) {
 			console.log(err);
 		}
 
-		community.joinGroup('103582791435442783' /* Project Crate */, function(err, result) {
-			if (err) {
-				console.log(err);
-			}
-		});
-
 		community.loggedIn(function(err, loggedIn) {
 			if (loggedIn) {
 				community.editProfile({
@@ -48,6 +42,12 @@ updateDetail = function(no, callback) {
 					'featuredBadge': '',
 					'primaryGroup': '103582791435442783' // Project Crate
 				}, function(err) {
+					if (err) {
+						console.log(err);
+					}
+				});
+
+				community.joinGroup('103582791435442783' /* Project Crate */, function(err, result) {
 					if (err) {
 						console.log(err);
 					}
