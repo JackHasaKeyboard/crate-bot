@@ -1,41 +1,78 @@
 const SteamUser = require('steam-user');
 const SteamCommunity = require('steamcommunity');
 const prompt = require('prompt');
+const fetch = require('node-fetch');
 const general = require('./general.js');
 const cred = require('./cred.js');
 
 
-updateDetail = function(no, callback) {
+updateDetail = function(no) {
 	var community = new SteamCommunity;
 
 	update = function() {
-		community.editProfile({
-			'name': 'Project Crate (' + no + ')',
-			'summary': `
-			Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
+		function getId() {
+			return fetch('http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + cred.key +'&vanityurl=' + 'projectcrate' + no).then(function(response) {
+				return response.json();
+			}).then(function(json) {
+				if (json.response.success == 1) {
+					var id = json.response.steamid;
 
-			We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
+					return id;
+				}
+			});
+		}
 
-			Dude in charge: http://steamcommunity.com/id/JackThaGamer/
-			Steam Group: http://steamcommunity.com/groups/ProjectCrate
+		getId().then(function(id) {
+			community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+				if (err) {
+					console.log(err);
+				} else {
+					var status;
 
-			The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
-			And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
-			`,
-			'customURL': 'projectcrate' + no,
+					if (inv.length == 0) {
+						status = "Empty";
+					} else {
+						var count = 0;
 
-			// null settings
-			'realName': '',
-			'country': '',
-			'state': '',
-			'city': '',
-			'background': '',
-			'featuredBadge': '',
-			'primaryGroup': '103582791435442783' // Project Crate
-		}, function(err) {
-			if (err) {
-				console.log(err);
-			}
+						inv.forEach(function(item) {
+							count++;
+						});
+					}
+
+					community.editProfile({
+						'name': 'Project Crate (' + no + ')',
+						'summary': `
+						Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
+
+						We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
+
+						Dude in charge: http://steamcommunity.com/id/JackThaGamer/
+						Steam Group: http://steamcommunity.com/groups/ProjectCrate
+
+						The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
+						And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
+
+
+						=== Bot info ===
+						Count: ` + count + `
+						`,
+						'customURL': 'projectcrate' + no,
+
+						// null settings
+						'realName': '',
+						'country': '',
+						'state': '',
+						'city': '',
+						'background': '',
+						'featuredBadge': '',
+						'primaryGroup': '103582791435442783' // Project Crate
+					}, function(err) {
+						if (err) {
+							console.log(err);
+						}
+					});
+				}
+			});
 		});
 
 		community.profileSettings({
