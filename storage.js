@@ -27,17 +27,15 @@ updateDetail = function(no) {
 				if (err) {
 					console.log(err);
 				} else {
-					var status;
+					var stock = {};
 
-					if (inv.length == 0) {
-						status = "Empty";
-					} else {
-						var count = 0;
+					inv.forEach(function(item) {
+						if (!stock[item.name]) {
+							stock[item.name] = 0;
+						}
 
-						inv.forEach(function(item) {
-							count++;
-						});
-					}
+						stock[item.name]++;
+					});
 
 					community.editProfile({
 						'name': 'Project Crate (' + no + ')',
@@ -54,7 +52,7 @@ updateDetail = function(no) {
 
 
 						=== Bot info ===
-						Count: ` + count + `
+						` + JSON.stringify(stock, null, '\t') + `
 						`,
 						'customURL': 'projectcrate' + no,
 
