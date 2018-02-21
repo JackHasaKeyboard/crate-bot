@@ -10,19 +10,7 @@ updateDetail = function(no) {
 	var community = new SteamCommunity;
 
 	update = function() {
-		function getId() {
-			return fetch('http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + cred.key +'&vanityurl=' + 'projectcrate' + no).then(function(response) {
-				return response.json();
-			}).then(function(json) {
-				if (json.response.success == 1) {
-					var id = json.response.steamid;
-
-					return id;
-				}
-			});
-		}
-
-		getId().then(function(id) {
+		general.getId('projectcrate' + no).then(function(id) {
 			community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
 				if (err) {
 					console.log(err);

@@ -63,9 +63,22 @@ updatePassword = function(no, current) {
 	});
 }
 
+getId = function(vanity) {
+	return fetch('http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + cred.key +'&vanityurl=' + vanity).then(function(response) {
+		return response.json();
+	}).then(function(json) {
+		if (json.response.success == 1) {
+			var id = json.response.steamid;
+
+			return id;
+		}
+	});
+}
+
 
 module.exports = {
 	initAcct,
 	chkStatus,
-	updatePassword
+	updatePassword,
+	getId
 }
