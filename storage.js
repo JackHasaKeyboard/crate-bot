@@ -9,7 +9,25 @@ const cred = require('./cred.js');
 updateDetail = function(no) {
 	var community = new SteamCommunity;
 
-	update = function() {
+	update = async function() {
+		await community.editProfile({
+			'name': 'Project Crate (' + no + ')',
+			'customURL': 'projectcrate' + no,
+
+			// null settings
+			'realName': '',
+			'country': '',
+			'state': '',
+			'city': '',
+			'background': '',
+			'featuredBadge': '',
+			'primaryGroup': '103582791435442783' // Project Crate
+		}, function(err) {
+			if (err) {
+				console.log(err);
+			}
+		});
+
 		general.getId('projectcrate' + no).then(function(id) {
 			community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
 				if (err) {
@@ -26,7 +44,6 @@ updateDetail = function(no) {
 					});
 
 					community.editProfile({
-						'name': 'Project Crate (' + no + ')',
 						'summary': `
 						Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
 
@@ -38,20 +55,9 @@ updateDetail = function(no) {
 						The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
 						And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
 
-
 						=== Bot info ===
 						` + JSON.stringify(stock, null, '\t') + `
 						`,
-						'customURL': 'projectcrate' + no,
-
-						// null settings
-						'realName': '',
-						'country': '',
-						'state': '',
-						'city': '',
-						'background': '',
-						'featuredBadge': '',
-						'primaryGroup': '103582791435442783' // Project Crate
 					}, function(err) {
 						if (err) {
 							console.log(err);
