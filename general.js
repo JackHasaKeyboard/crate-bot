@@ -1,6 +1,7 @@
 const SteamUser = require('steam-user');
 const fetch = require('node-fetch');
 const prompt = require('prompt');
+const _ = require('lodash');
 const cred = require('./cred.js');
 
 initAcct = function(no, callback) {
@@ -75,10 +76,21 @@ getId = function(vanity) {
 	});
 }
 
+iter = function(callback) {
+	prompt.get(['floor', 'roof'], function(err, i) {
+		_.range(i.floor, i.roof).forEach(function(no, idx) {
+			setTimeout(function() {
+				callback();
+			}, idx * 1000);
+		});
+	});
+}
+
 
 module.exports = {
 	initAcct,
 	chkStatus,
 	updatePassword,
-	getId
+	getId,
+	iter
 }
