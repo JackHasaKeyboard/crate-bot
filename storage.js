@@ -1,5 +1,6 @@
 const SteamUser = require('steam-user');
 const SteamCommunity = require('steamcommunity');
+const SteamTradeOfferManager = require('steam-tradeoffer-manager');
 const prompt = require('prompt');
 const fetch = require('node-fetch');
 const general = require('./general.js');
@@ -155,8 +156,51 @@ mkAcct = function(no) {
 	});
 }
 
+log = function(no) {
+	const community = new SteamCommunity;
+
+	general.getId('projectcrate' + no).then(function(id) {
+		community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+			if (err) {
+				console.log(err);
+			} else {
+				fs.readFile('status.json', function(err, data) {
+					if (err) {
+						console.log(err);
+					} else {
+						var obj = JSON.parse(data);
+
+						var stock = {};
+
+						inv.forEach(function(item) {
+							if (!stock[item.name]) {
+								stock[item.name] = 0;
+							}
+
+							stock[item.name]++;
+						});
+
+						if (!obj[no]) {
+							obj[no] = {};
+						}
+
+						obj[no] = stock;
+
+						fs.writeFile('status.json', JSON.stringify(obj, null, 2 /* format to be readable */), function(err) {
+							if (err) {
+								console.log(err);
+							}
+						});
+					}
+				});
+			}
+		});
+	});
+}
+
 
 module.exports = {
 	updateDetail,
-	mkAcct
+	mkAcct,
+	log
 }
