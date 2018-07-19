@@ -1,4 +1,5 @@
-const SteamUser = require('steam-user'),
+const $ = require('jquery'),
+	SteamUser = require('steam-user'),
 	SteamCommunity = require('steamcommunity'),
 	SteamTradeOfferManager = require('steam-tradeoffer-manager'),
 	prompt = require('prompt'),
@@ -8,94 +9,59 @@ const SteamUser = require('steam-user'),
 
 
 module.exports = {
-	updateDetail: function(no) {
+	updateDetail: function(no, password) {
 		var community = new SteamCommunity;
 
-		update = async function() {
-			await community.editProfile({
-				'name': 'Project Crate (' + no + ')',
-				'customURL': 'projectcrate' + no,
-
-				// null settings
-				'realName': '',
-				'country': '',
-				'state': '',
-				'city': '',
-				'background': '',
-				'featuredBadge': '',
-				'primaryGroup': '103582791435442783' // Project Crate
+		update = function() {
+			community.profileSettings({
+				'profile': 3,
+				'comments': 1,
+				'inventory': 3,
+				'inventoryGifts': true,
+				'gameDetails': 1,
+				'playtime': true
 			}, function(err) {
 				if (err) {
 					console.log(err);
 				}
 			});
 
-			general.getId('projectcrate' + no).then(function(id) {
-				community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+			var user = new SteamUser;
+
+			user.logOn({
+				'accountName': 'projectcrate' + no,
+				'password': password
+			});
+
+			user.on('loggedOn', function() {
+				user.changeEmail({
+					'password': password,
+					'email': cred.crate.email
+				}, function(err) {
 					if (err) {
 						console.log(err);
 					} else {
-						var stock = {};
-
-						inv.forEach(function(item) {
-							if (!stock[item.name]) {
-								stock[item.name] = 0;
-							}
-
-							stock[item.name]++;
-						});
-
-						community.editProfile({
-							'summary': `
-							Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
-
-							We'd love it if you'd donate some Crates! To make a donation, send the dude in charge (JackThaGamer) a trade and you'll be marked down for your donation.
-
-							Dude in charge: http://steamcommunity.com/id/JackThaGamer/
-							Steam Group: http://steamcommunity.com/groups/ProjectCrate
-
-							The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
-							And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
-
-							=== Bot info ===
-							` + JSON.stringify(stock, null, '\t') + `
-							`,
-						}, function(err) {
-							if (err) {
-								console.log(err);
-							}
+						prompt.get(['code'], function(err, i) {
+							user.changeEmail({
+								'password': password,
+								'email': cred.crate.email,
+								'code': i.code
+							}, function(err) {
+								if (err) {
+									console.log(err);
+								} else {
+									console.log('Successfully updated e-mail');
+								}
+							});
 						});
 					}
 				});
-			});
-
-			community.profileSettings({
-				'profile': 'Public',
-				'comments': 1, // private
-				'inventory': 'Public',
-				'inventoryGifts': true // public
-			}, function(err) {
-				if (err) {
-					console.log(err);
-				}
-			});
-
-			community.joinGroup('103582791435442783' /* Project Crate */, function(err, result) {
-				if (err) {
-					console.log(err);
-				}
-			});
-
-			community.uploadAvatar('crate.png', null, function(err, result) {
-				if (err) {
-					console.log(err);
-				}
 			});
 		}
 
 		community.login({
 			'accountName': 'projectcrate' + no,
-			'password': cred.crate.password + no
+			'password': password
 		}, function(err, user) {
 			if (err) {
 				console.log(err);
@@ -105,7 +71,7 @@ module.exports = {
 						prompt.get(['steamGuard'], function(err, i) {
 							community.login({
 								'accountName': 'projectcrate' + no,
-								'password': cred.crate.password + no,
+								'password': password,
 								'authCode': i.steamGuard
 							}, function(err, user) {
 								if (err) {
@@ -124,7 +90,7 @@ module.exports = {
 						prompt.get(['captcha'], function(err, i) {
 							community.login({
 								'accountName': 'projectcrate' + no,
-								'password': cred.crate.password + no,
+								'password': password,
 								'captcha': i.captcha
 							}, function(err, user) {
 								if (err) {
@@ -196,6 +162,82 @@ module.exports = {
 					});
 				}
 			});
+		});
+	},
+
+	stock: function() {
+		const community = new SteamCommunity;
+
+		getId = function(vanity) {
+			return fetch('http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + cred.key +'&vanityurl=' + vanity).then(function(response) {
+				return response.json();
+			}).then(function(json) {
+				if (json.response.success == 1) {
+					var id = json.response.steamid;
+
+					return id;
+				}
+			});
+		}
+
+		var total = [];
+		for (var no = 1; no < 4; no++) {
+			getId('projectcrate' + no).then(function(id) {
+				community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+					if (err) {
+						console.log(err);
+					} else {
+						var stock = {};
+
+						inv.forEach(function(item) {
+							if (!stock[item.name]) {
+								stock[item.name] = 0;
+							}
+
+							stock[item.name]++;
+						});
+
+						total.push(stock);
+					}
+
+					fs.writeFile('stock.json', JSON.stringify(total, null, 2 /* format to be readable */), function(err) {
+						if (err) {
+							console.log(err);
+						}
+					});
+				});
+			});
+		}
+
+		var tally = {};
+		fs.readFile('stock.json', 'utf-8', (err, dat) => {
+			if (err) {
+				console.log(err);
+			} else {
+				var obj = JSON.parse(dat);
+
+				obj.forEach(function(names) {
+					for (var item in names) {
+						if (!tally[item]) {
+							tally[item] = 0;
+						}
+
+						tally[item] += names[item];
+					}
+				});
+
+				tally['total'] = 0;
+
+				for (var name in tally) {
+					tally['total'] += tally[name];
+				}
+
+				fs.writeFile('tally.json', JSON.stringify(tally, null, 2 /* format to be readable */), function(err) {
+					if (err) {
+						console.log(err);
+					}
+				});
+			}
 		});
 	}
 }
