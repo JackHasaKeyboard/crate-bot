@@ -209,27 +209,29 @@ module.exports = {
 			});
 		}
 
-		var tally = {};
+		var tally = {
+			item: {}
+		};
 		fs.readFile('stock.json', 'utf-8', (err, dat) => {
 			if (err) {
 				console.log(err);
 			} else {
 				var obj = JSON.parse(dat);
 
-				obj.forEach(function(names) {
-					for (var item in names) {
-						if (!tally[item]) {
-							tally[item] = 0;
+				obj.forEach(function(items) {
+					for (var item in items) {
+						if (!tally['item'][item]) {
+							tally['item'][item] = 0;
 						}
 
-						tally[item] += names[item];
+						tally['item'][item] += items[item];
 					}
 				});
 
 				tally['total'] = 0;
 
-				for (var name in tally) {
-					tally['total'] += tally[name];
+				for (var name in tally['item']) {
+					tally['total'] += tally['item'][name];
 				}
 
 				fs.writeFile('tally.json', JSON.stringify(tally, null, 2 /* format to be readable */), function(err) {
