@@ -9,7 +9,36 @@ const SteamUser = require('steam-user'),
 
 
 module.exports = {
-	updateDetail: function(no, current) {
+	updatePassword: function(no, current) {
+		var user = new SteamUser;
+
+		user.logOn({
+			'accountName': 'projectcrate' + no,
+			'password': current
+		});
+
+		user.on('loggedOn', function() {
+			user.on('emailInfo', function(addr, valid) {
+				user.requestPasswordChangeEmail(current, function(err) {
+					if (err) {
+						console.log(err);
+					} else {
+						prompt.get(['code'], function(err, i) {
+							user.changePassword(current, cred.crate.password + no, i.code, function(err) {
+								if (err) {
+									console.log(err);
+								} else {
+									console.log('Successfully updated password');
+								}
+							});
+						});
+					}
+				});
+			});
+		});
+	},
+
+	updateDetail: function(no) {
 		var community = new SteamCommunity;
 
 		update = function() {
@@ -49,16 +78,6 @@ module.exports = {
 					if (err) {
 						console.log(err);
 					} else {
-						var stock = {};
-
-						inv.forEach(function(item) {
-							if (!stock[item.name]) {
-								stock[item.name] = 0;
-							}
-
-							stock[item.name]++;
-						});
-
 						community.editProfile({
 							'summary': `
 							Storage account #` + no + ` for Project Crate, a project put together to amass as many Crates as possible and break a world record.
@@ -70,9 +89,6 @@ module.exports = {
 
 							The profile picture was sketched by Pobito: http://steamcommunity.com/id/Pobbimann
 							And colored by Shiny: http://steamcommunity.com/profiles/76561198066874043
-
-							=== Bot info ===
-							` + JSON.stringify(stock, null, '\t') + `
 							`,
 						}, function(err) {
 							if (err) {
@@ -99,40 +115,40 @@ module.exports = {
 
 			user.logOn({
 				'accountName': 'projectcrate' + no,
-				'password': current
+				'password': cred.crate.password + no
 			});
 
 			user.on('loggedOn', function() {
 				// if (user.emailInfo.address != cred.crate.email) {
-				user.changeEmail({
-					'password': cred.crate.password + no,
-					'email': cred.crate.email
-				}, function(err) {
-					if (err) {
-						console.log(err);
-					} else {
-						prompt.get(['code'], function(err, i) {
-							user.changeEmail({
-								'password': cred.crate.password + no,
-								'email': cred.crate.email,
-								'code': i.code
-							}, function(err) {
-								if (err) {
-									console.log(err);
-								} else {
-									console.log('Successfully updated e-mail');
-								}
-							});
-						});
-					}
-				});
+				// user.changeEmail({
+				// 	'password': cred.crate.password + no,
+				// 	'email': cred.crate.email
+				// }, function(err) {
+				// 	if (err) {
+				// 		console.log(err);
+				// 	} else {
+				// 		prompt.get(['code'], function(err, i) {
+				// 			user.changeEmail({
+				// 				'password': cred.crate.password + no,
+				// 				'email': cred.crate.email,
+				// 				'code': i.code
+				// 			}, function(err) {
+				// 				if (err) {
+				// 					console.log(err);
+				// 				} else {
+				// 					console.log('Successfully updated e-mail');
+				// 				}
+				// 			});
+				// 		});
+				// 	}
+				// });
 				// }
 			});
 		}
 
 		community.login({
 			'accountName': 'projectcrate' + no,
-			'password': current
+			'password': cred.crate.password + no
 		}, function(err, user) {
 			if (err) {
 				console.log(err);
@@ -142,7 +158,7 @@ module.exports = {
 						prompt.get(['steamGuard'], function(err, i) {
 							community.login({
 								'accountName': 'projectcrate' + no,
-								'password': current,
+								'password': cred.crate.password + no,
 								'authCode': i.steamGuard
 							}, function(err, user) {
 								if (err) {
@@ -161,7 +177,7 @@ module.exports = {
 						prompt.get(['captcha'], function(err, i) {
 							community.login({
 								'accountName': 'projectcrate' + no,
-								'password': current,
+								'password': cred.crate.password + no,
 								'captcha': i.captcha
 							}, function(err, user) {
 								if (err) {
@@ -236,30 +252,61 @@ module.exports = {
 		});
 	},
 
-	stock: function() {
-		total = {};
-
+	log: function(no) {
 		const community = new SteamCommunity;
 
-		function getInv(no) {
-			general.getId('projectcrate' + no).then(function(id) {
-				community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+		function getId(vanity) {
+			return fetch('http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + cred.key +'&vanityurl=' + vanity).then(function(response) {
+				return response.json();
+			}).then(function(json) {
+				if (json.response.success == 1) {
+					var id = json.response.steamid;
+
+					return id;
+				}
+			});
+		};
+
+		getId('projectcrate' + no).then(function(id) {
+			community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+				var stock;
+
+				if (err) {
+					console.log(err);
+
+					stock = null;
+				} else {
+					stock = {};
+
+					inv.forEach(function(item) {
+						if (!stock[item.name]) {
+							stock[item.name] = 0;
+						}
+
+						stock[item.name]++;
+					});
+				}
+
+				fs.readFile('stock.json', 'utf-8', (err, dat) => {
 					if (err) {
 						console.log(err);
 					} else {
-						var stock = {};
+						var obj = JSON.parse(dat);
 
-						inv.forEach(function(item) {
-							if (!stock[item.name]) {
-								stock[item.name] = 0;
+						if (!obj[no]) {
+							obj[no] = {
+								'stock': {
+								}
 							}
+						}
 
-							stock[item.name]++;
-						});
+						if (obj[no]['stock'] == {}) {
+							obj[no]['stock'] = null;
+						} else {
+							obj[no]['stock'] = stock;
+						}
 
-						total[no] = stock;
-
-						fs.writeFile('stock.json', JSON.stringify(total, null, 2 /* format to be readable */), function(err) {
+						fs.writeFile('stock.json', JSON.stringify(obj, null, 2 /* format to be readable */), function(err) {
 							if (err) {
 								console.log(err);
 							}
@@ -267,44 +314,90 @@ module.exports = {
 					}
 				});
 			});
-		}
+		});
+	},
 
-		for (var no = 1; no < 20; no++) {
-			getInv(no);
-		}
+	stock: function() {
+		prompt.get(['floor', 'roof'], function(err, i) {
+			_.range(i.floor, i.roof).forEach(function(no, idx) {
+				setTimeout(function() {
+					console.log('Loggin ' + no);
 
-
-		var tally = {
-			item: {}
-		};
-		fs.readFile('stock.json', 'utf-8', (err, dat) => {
-			if (err) {
-				console.log(err);
-			} else {
-				var obj = JSON.parse(dat);
-
-				for (var acct in obj) {
-					for (var item in obj[acct]) {
-						if (!tally['item'][item]) {
-							tally['item'][item] = 0;
-						}
-
-						tally['item'][item] += obj[acct][item];
-					}
-
-					tally['total'] = 0;
-
-					for (var name in tally['item']) {
-						tally['total'] += tally['item'][name];
-					}
-
-					fs.writeFile('tally.json', JSON.stringify(tally, null, 2 /* format to be readable */), function(err) {
-						if (err) {
-							console.log(err);
-						}
-					});
-				}
-			}
+					storage.log(no);
+				}, idx * 3000);
+			});
 		});
 	}
+
+	// stock: function() {
+	// 	total = {};
+
+	// 	const community = new SteamCommunity;
+
+	// 	function getInv(no) {
+	// 		general.getId('projectcrate' + no).then(function(id) {
+	// 			community.getUserInventoryContents(id, 440, 2, true, function(err, inv) {
+	// 				if (err) {
+	// 					console.log(err);
+	// 				} else {
+	// 					var stock = {};
+
+	// 					inv.forEach(function(item) {
+	// 						if (!stock[item.name]) {
+	// 							stock[item.name] = 0;
+	// 						}
+
+	// 						stock[item.name]++;
+	// 					});
+
+	// 					total[no] = stock;
+
+	// 					fs.writeFile('stock.json', JSON.stringify(total, null, 2 /* format to be readable */), function(err) {
+	// 						if (err) {
+	// 							console.log(err);
+	// 						}
+	// 					});
+	// 				}
+	// 			});
+	// 		});
+	// 	}
+
+	// 	for (var no = 1; no < 20; no++) {
+	// 		getInv(no);
+	// 	}
+
+
+	// 	// var tally = {
+	// 	// 	item: {}
+	// 	// };
+	// 	// fs.readFile('stock.json', 'utf-8', (err, dat) => {
+	// 	// 	if (err) {
+	// 	// 		console.log(err);
+	// 	// 	} else {
+	// 	// 		var obj = JSON.parse(dat);
+
+	// 	// 		for (var acct in obj) {
+	// 	// 			for (var item in obj[acct]) {
+	// 	// 				if (!tally['item'][item]) {
+	// 	// 					tally['item'][item] = 0;
+	// 	// 				}
+
+	// 	// 				tally['item'][item] += obj[acct][item];
+	// 	// 			}
+
+	// 	// 			tally['total'] = 0;
+
+	// 	// 			for (var name in tally['item']) {
+	// 	// 				tally['total'] += tally['item'][name];
+	// 	// 			}
+
+	// 	// 			fs.writeFile('tally.json', JSON.stringify(tally, null, 2 /* format to be readable */), function(err) {
+	// 	// 				if (err) {
+	// 	// 					console.log(err);
+	// 	// 				}
+	// 	// 			});
+	// 	// 		}
+	// 	// 	}
+	// 	// });
+	// }
 }

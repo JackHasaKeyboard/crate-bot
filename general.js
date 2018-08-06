@@ -2,6 +2,7 @@ const SteamUser = require('steam-user'),
 	fetch = require('node-fetch'),
 	prompt = require('prompt'),
 	_ = require('lodash'),
+	storage = require('./storage.js'),
 	cred = require('./cred.js')
 
 
@@ -45,23 +46,35 @@ module.exports = {
 		var user = new SteamUser();
 
 		user.logOn({
-			'accountName': 'projectcrate' + no,
-			'password': current
+			'accountName': 'projectcratedropbox1',
+			'password': 'OrangeBananaPotatoOctopusDropbox1'
 		});
 
 		user.on('loggedOn', function() {
 			console.log('Successfully logged in');
 
-			user.requestPasswordChangeEmail(current, function() {
-				prompt.get(['code'], function(err, i) {
-					user.changePassword(current, cred.crate.password + no, i.code, function(err) {
+			user.on('emailInfo', function(addr, valid) {
+				if (addr && valid) {
+					console.log('Address: ' + addr);
+
+					user.requestPasswordChangeEmail('OrangeBananaPotatoOctopusDropbox1', function(err) {
 						if (err) {
 							console.log(err);
 						} else {
-							console.log('Successfully updated password');
+							console.log('Successfully sent e-mail');
+
+							prompt.get(['dacode'], function(err, i) {
+								user.changePassword(current, cred.crate.password + no, i.dacode, function(err) {
+									if (err) {
+										console.log(err);
+									} else {
+										console.log('Successfully updated password');
+									}
+								});
+							});
 						}
 					});
-				});
+				}
 			});
 		});
 	},
